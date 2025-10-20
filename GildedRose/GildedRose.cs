@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace GildedRoseKata;
 
@@ -13,77 +14,65 @@ public class GildedRose
 
     public void UpdateQuality()
     {
-        for (var i = 0; i < Items.Count; i++)
+        foreach (var item in Items)
         {
-            if (Items[i].Name != "Aged Brie" && Items[i].Name != "Backstage passes to a TAFKAL80ETC concert")
-            {
-                if (Items[i].Quality > 0)
-                {
-                    if (Items[i].Name != "Sulfuras, Hand of Ragnaros")
-                    {
-                        Items[i].Quality = Items[i].Quality - 1;
-                    }
-                }
-            }
-            else
-            {
-                if (Items[i].Quality < 50)
-                {
-                    Items[i].Quality = Items[i].Quality + 1;
-
-                    if (Items[i].Name == "Backstage passes to a TAFKAL80ETC concert")
-                    {
-                        if (Items[i].SellIn < 11)
-                        {
-                            if (Items[i].Quality < 50)
-                            {
-                                Items[i].Quality = Items[i].Quality + 1;
-                            }
-                        }
-
-                        if (Items[i].SellIn < 6)
-                        {
-                            if (Items[i].Quality < 50)
-                            {
-                                Items[i].Quality = Items[i].Quality + 1;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (Items[i].Name != "Sulfuras, Hand of Ragnaros")
-            {
-                Items[i].SellIn = Items[i].SellIn - 1;
-            }
-
-            if (Items[i].SellIn < 0)
-            {
-                if (Items[i].Name != "Aged Brie")
-                {
-                    if (Items[i].Name != "Backstage passes to a TAFKAL80ETC concert")
-                    {
-                        if (Items[i].Quality > 0)
-                        {
-                            if (Items[i].Name != "Sulfuras, Hand of Ragnaros")
-                            {
-                                Items[i].Quality = Items[i].Quality - 1;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Items[i].Quality = Items[i].Quality - Items[i].Quality;
-                    }
-                }
-                else
-                {
-                    if (Items[i].Quality < 50)
-                    {
-                        Items[i].Quality = Items[i].Quality + 1;
-                    }
-                }
-            }
+            UpdateItemQuality(item);
         }
+    }
+    
+    private void UpdateItemQuality(Item item)
+    {
+        bool isConjured = item.Name.StartsWith("Conjured");
+        bool isAgedBrie = item.Name == "Aged Brie";
+        bool isBackstagePass = item.Name == "Backstage passes to a TAFKAL80ETC concert";
+        bool isSulfuras = item.Name == "Sulfuras, Hand of Ragnaros";
+        
+        if (isSulfuras) return;
+            
+        item.SellIn -= 1;
+
+        if (isAgedBrie)
+            UpdateAgedBrie(item);
+        else if (isBackstagePass)
+            UpdateBackstagePass(item);
+        else
+            UpdateNormalOrConjuredItem(item, isConjured);
+        
+        item.Quality = Math.Clamp(item.Quality, 0, 50);
+    }
+    
+    private void UpdateAgedBrie(Item item)
+    {
+        if (item.SellIn < 0)
+            item.Quality += 2;
+        else
+            item.Quality += 1;
+    }
+    
+    private void UpdateBackstagePass(Item item)
+    {
+        if (item.SellIn < 0)
+        {
+            item.Quality = 0;
+            return;
+        }
+
+        if (item.Quality >= 50)
+            return;
+
+        int increase = 1;
+        if (item.SellIn < 10) increase++;
+        if (item.SellIn < 5) increase++;
+
+        item.Quality += increase;
+    }
+    
+    private void UpdateNormalOrConjuredItem(Item item, bool isConjured)
+    {
+        if (item.Quality <= 0) return;
+
+        int degrade = (item.SellIn < 0 ? 2 : 1);
+
+        item.Quality -= degrade;
     }
 }
